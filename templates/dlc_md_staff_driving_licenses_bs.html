@@ -1,0 +1,341 @@
+{% extends "dlc_base_bs.html" %}
+{% block head %}
+
+<script type="text/javascript" language="javascript">
+
+    var staffEditor;
+    var id;
+    var staffTable;
+    var licenseEditor;
+    var licenseTable;
+
+    // Staff Editor/Table
+    $(document).ready(function () {
+        var StaffEditor = new $.fn.dataTable.Editor({
+            ajax: {
+                create: {
+                    url: '/staff/create_staff',
+                    success: function (response) {
+                        // window.location.reload();
+                        console.log(response)
+                    }
+                },
+                edit: {
+                    url: '/staff/update_staff',
+                    "dataType": "json",
+                    "dataSrc": "data",
+                    "contentType": "application/json",
+                    success: function (response) {
+                        window.location.reload();
+                    }
+                },
+                remove: "/staff/delete_staff"
+            },
+            table: '#sample_data',
+            fields: [{
+                label: "ID:",
+                name: "sample_data.id",
+                "type": "hidden"
+            }, {
+                label: "UUID :",
+                name: "sample_data.uuid",
+                "type": "hidden"
+            }, {
+                label: "First name:",
+                name: "sample_data.first_name"
+            }, {
+                label: "Last name:",
+                name: "sample_data.last_name"
+            }, {
+                label: "Email:",
+                name: "sample_data.email"
+            }, {
+                label: "Address:",
+                name: "sample_data.address"
+            }, {
+                label: "Zip Cde:",
+                name: "sample_data.zip_code"
+            }, {
+                label: "City:",
+                name: "sample_data.city"
+            }, {
+                label: "Country:",
+                name: "sample_data.country"
+            }, {
+                label: "Phone:",
+                name: "sample_data.phone"
+            }, {
+                label: "Date Entry:",
+                name: "sample_data.date_entry",
+                type: 'datetime'
+            }, {
+                label: "Date Exit:",
+                name: "sample_data.date_exit",
+                type: 'datetime'
+            }],
+        });
+        window.editor = StaffEditor;
+
+        var staffTable = $('#sample_data').DataTable({
+            dom: 'Bfrtip',
+            ajax: '/staff/',
+            columns: [
+                {data: "sample_data.id"},
+                {data: "sample_data.uuid"},
+                {data: "sample_data.first_name"},
+                {data: "sample_data.last_name"},
+                {data: "sample_data.email"},
+                {data: "sample_data.address"},
+                {data: "sample_data.zip_code"},
+                {data: "sample_data.city"},
+                {data: "sample_data.country"},
+                {data: "sample_data.phone"},
+                {data: "sample_data.date_entry"},
+                {data: "sample_data.date_exit"},
+                {
+                    data: 'driver_licenses_data', render: function (data) {
+                        return data.length;
+                    }
+                }
+            ],
+            select: {
+                style: 'single'
+            },
+            buttons: [
+                {extend: "create", editor: StaffEditor},
+                {extend: "edit", editor: StaffEditor},
+                {extend: "remove", editor: StaffEditor}
+            ]
+        });
+        console.log('create', buttons)
+
+
+        var licenseEditor = new $.fn.dataTable.Editor({
+            ajax: {
+                url: '/staff_driving_licenses/select_driving_licenses/',
+                data: function (d) {
+                    var selected = staffTable.row({selected: true});
+                    if (selected.any()) {
+                        d.id = selected.data().id;
+                    }
+                }
+            },
+            table: '#driver_licenses_data',
+            fields: [{
+                label: "ID:",
+                name: "driver_licenses_data.id",
+                "type": "hidden"
+            }, {
+                label: "UUID :",
+                name: "driver_licenses_data.uuid",
+                "type": "hidden"
+            }, {
+                label: "Staff Id:",
+                name: "driver_licenses_data.staff_id"
+            }, {
+                label: "license_nr:",
+                name: "driver_licenses_data.license_nr"
+            }, {
+                label: "rfid:",
+                name: "driver_licenses_data.rfid"
+            }, {
+                label: "check_interval:",
+                name: "driver_licenses_data.check_interval"
+            }, {
+                label: "authority:",
+                name: "driver_licenses_data.authority"
+            }, {
+                label: "date_issue:",
+                name: "driver_licenses_data.date_issue"
+            }, {
+                label: "Country:",
+                name: "driver_licenses_data.date_valid"
+            }, {
+                label: "enlisted:",
+                name: "driver_licenses_data.enlisted"
+            }],
+        });
+        window.editor = licenseEditor;
+
+        var licenseTable = $('#driver_licenses_data').DataTable({
+            dom: 'Bfrtip',
+            ajax: {
+                url: '/staff_driving_licenses/',
+                type: 'post',
+                data: function (d) {
+                    var selected = staffTable.row({selected: true});
+                    if (selected.any()) {
+                        d.id = selected.data().id;
+                    }
+                }
+            },
+            // staff_id, license_nr, rfid, check_interval, authority, date_issue, date_valid, enlisted
+            columns: [
+                {data: 'driver_licenses_data.id'},
+                {data: 'driver_licenses_data.uuid'},
+                {data: 'sample_data.id'},
+                {data: 'driver_licenses_data.license_nr'},
+                {data: 'driver_licenses_data.rfid'},
+                {data: 'driver_licenses_data.check_interval'},
+                {data: 'driver_licenses_data.authority'},
+                {data: 'driver_licenses_data.date_issue'},
+                {data: 'driver_licenses_data.date_valid'},
+                {data: 'driver_licenses_data.enlisted'}
+            ],
+            select: true,
+            buttons: [
+                {extend: 'create', editor: licenseEditor},
+                {extend: 'edit', editor: licenseEditor},
+                {extend: 'remove', editor: licenseEditor}
+            ]
+        });
+
+        staffTable.on('select', function (e) {
+            licenseTable.ajax.reload();
+
+            licenseEditor
+                .field('driver_licenses_data.id')
+                .def(staffTable.row({selected: true}).data().id);
+        });
+
+        staffTable.on('deselect', function () {
+            licenseTable.ajax.reload();
+        });
+
+        licenseEditor.on('submitSuccess', function () {
+            staffTable.ajax.reload();
+        });
+
+        staffeditor.on('submitSuccess', function () {
+            licenseTable.ajax.reload();
+        });
+
+    });
+
+
+</script>
+
+{% endblock %}
+
+{% block title %}FLEETDLC - Driver Management{% endblock %}
+
+{% block content %}
+
+<div class="container">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Staff List</h5>
+            <table id="sample_data" class="table table-striped table-responsive">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>UUID</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Email</th>
+                    <th>Address</th>
+                    <th>Zip Code</th>
+                    <th>City</th>
+                    <th>Country</th>
+                    <th>Phone</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for row in staff %}
+                <tr>
+                    <td data-pk="{{ row.id }}">{{ row.id }}</td>
+                    <td data-name="uuid" class="uuid" id="uuid" data-type="text"
+                        data-pk="{{ row.id }}">{{ row.uuid }}
+                    </td>
+                    <td data-name="first_name" class="first_name" id="first_name" data-type="text"
+                        data-pk="{{ row.id }}">
+                        {{ row.first_name }}
+                    </td>
+                    <td data-name="last_name" class="last_name" id="last_name" data-type="text"
+                        data-pk="{{ row.id }}">
+                        {{ row.last_name }}
+                    </td>
+                    <td data-name="email" class="email" id="email" data-type="text"
+                        data-pk="{{ row.id }}">{{ row.email }}
+                    </td>
+                    <td data-name="address" class="address" id="address" data-type="text"
+                        data-pk="{{ row.id }}">
+                        {{ row.address }}
+                    </td>
+                    <td data-name="zip_code" class="zip_code" id="zip_code" data-type="text"
+                        data-pk="{{ row.id }}">
+                        {{ row.zip_code }}
+                    </td>
+                    <td data-name="city" class="city" id="city" data-type="text"
+                        data-pk="{{ row.id }}">{{ row.city }}
+                    </td>
+                    <td data-name="country" class="country" id="country" data-type="text"
+                        data-pk="{{ row.id }}">
+                        {{ row.country }}
+                    </td>
+                    <td data-name="phone" class="phone" id="phone" data-type="text"
+                        data-pk="{{ row.id }}">{{ row.phone }}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <br>
+
+            <h5 class="card-title">Driver Licenses List</h5>
+            <table id="driver_licenses_data" class="table table-striped table-responsive">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Staff ID</th>
+                    <th>License Nr</th>
+                    <th>RFID</th>
+                    <th>Check Interval</th>
+                    <th>Authority</th>
+                    <th>Date Issue</th>
+                    <th>Date valid</th>
+                    <th>Enlisted</th>
+                </tr>
+                </thead>
+                <tbody class="addBody">
+                {% for row in staff_licencec %}
+                <tr>
+                    <td data-pk="{{row.id}}">{{row.id}}</td>
+                    <td data-name="uuid" class="uuid" id="l_uuid" data-type="text" data-pk="{{row.id}}">{{row.uuid}}
+                    </td>
+                    <td data-name="staff_id" class="staff_id" id="staff_id" data-type="text" data-pk="{{row.id}}">
+                        {{row.staff_id}}
+                    </td>
+                    <td data-name="license_nr" class="license_nr" data-type="text" data-pk="{{row.id}}">
+                        {{row.license_nr}}
+                    </td>
+                    <td data-name="rfid" class="rfid" data-type="text" data-pk="{{row.id}}">{{row.rfid}}</td>
+                    <td data-name="check_interval" class="check_interval" data-type="text" data-pk="{{row.id}}">
+                        {{row.check_interval}}
+                    </td>
+                    <td data-name="authority" class="authority" data-type="text" data-pk="{{row.id}}">
+                        {{row.authority}}
+                    </td>
+                    <td data-name="date_issue" class="date_issue" data-type="text" data-pk="{{row.id}}">
+                        {{row.date_issue}}
+                    </td>
+                    <td data-name="date_valid" class="date_valid" data-type="text" data-pk="{{row.id}}">
+                        {{row.date_valid}}
+                    </td>
+                    <td data-name="enlisted" class="enlisted" data-type="text" data-pk="{{row.id}}">{{row.enlisted}}
+                    </td>
+                    <td data-name="last_user_id" class="last_user_id" data-type="text" data-pk="{{row.id}}">
+                        {{row.last_user_id}}
+                    </td>
+                    <td data-name="last_access" class="last_access" data-type="text" data-pk="{{row.id}}">
+                        {{row.last_access}}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

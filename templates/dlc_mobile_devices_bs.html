@@ -1,0 +1,169 @@
+{% extends "dlc_base_bs.html" %}
+
+{% block head %}
+
+    <script type="text/javascript" language="javascript">
+
+        var deviceeditor;
+        var id;
+        var devicetable;
+
+        // Mobile Devices Editor
+        $(document).ready(function () {
+
+            $('#sample_data tbody').on('click', 'tr', function () {
+                var table = $('#sample_data').DataTable();
+                id = table.row(this).data()[0];
+            });
+
+            deviceeditor = new $.fn.dataTable.Editor({
+                ajax: {
+                    create: {
+                        url: '/mobile_devices/create_mobile_device',
+                        success: function (response) {
+                            window.location.reload();
+                        }
+                    },
+                    edit: {
+                        url: '/mobile_devices/update_mobile_device',
+                        "dataType": "json",
+                        "dataSrc": "data",
+                        "contentType": "application/json",
+                        success: function (response) {
+                            window.location.reload();
+                        }
+                    },
+                    remove: "/mobile_devices/delete_mobile_device"
+                },
+                table: "#sample_data",
+                idSrc: "id",
+                fields: [{
+                        label: "ID:",
+                        name: "id",
+                        "type": "hidden"
+                    }, {
+                        label: "UUID :",
+                        name: "uuid",
+                        "type": "hidden"
+                    }, {
+                        label: "Device ID:",
+                        name: "device_id"
+                    }, {
+                        label: "Description:",
+                        name: "description"
+                    }, {
+                        label: "Serial:",
+                        name: "serial"
+                    }, {
+                        label: "Activation Code:",
+                        name: "activation_code"
+                    }
+                ],
+                formOptions: {
+                    inline: {
+                        onBlur: 'submit'
+                    }
+                }
+            });
+
+            deviceeditor.on('preSubmit', function (e, o, action) {
+                if (action !== 'remove') {
+                    var deviceId = this.field('device_id');
+                    var description = this.field('description');
+                    var serial = this.field('serial');
+                    var activationCode = this.field('activation_code');
+
+                    if (!deviceId.isMultiValue()) {
+                        if (!deviceId.val()) {
+                            deviceId.error('A Device ID is required');
+                        }
+                    }
+                    if (this.inError()) {
+                        return false;
+                    }
+                }
+            });
+
+            // Activate an inline edit on click of a table cell
+            $('#sample_data').on('click', 'tbody td:not(:first-child)', function (e) {
+                deviceeditor.inline(this);
+            });
+
+            // Mobile Devices Table
+            devicetable = $('#sample_data').DataTable({
+                dom: "Bfrtip",
+                responsive: true,
+                searchBuilder: true,
+                columns: [
+                    {data: "id"},
+                    {data: "uuid"},
+                    {data: "device_id"},
+                    {data: "description"},
+                    {data: "serial"},
+                    {data: "activation_code"}
+                ],
+                select: {
+                    style: 'os',
+                    selector: 'td:first-child'
+                },
+                keys: {
+                    columns: ':not(:first-child)',
+                    keys: [5],
+                    editor: deviceeditor,
+                    editOnFocus: true
+                },
+                buttons: [
+                    {extend: 'searchBuilder'},
+                    {extend: "create", editor: deviceeditor},
+                    {extend: "edit", editor: deviceeditor},
+                    {extend: "remove", editor: deviceeditor},
+                    'copy', 'csv', 'excel', 'pdf', 'print'
+                ]
+            });
+            devicetable.column(1).visible(false);
+        });
+
+    </script>
+
+{% endblock %}
+
+{% block title %}FLEETDLC - Driver Management{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Mobile Devices</h5>
+                <table id="sample_data" class="table table-striped table-responsive">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>UUID</th>
+                        <th>Device ID</th>
+                        <th>Description</th>
+                        <th>Serial</th>
+                        <th>Activation Code</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in staff %}
+                        <tr>
+                            <td data-pk="{{ row.id }}">{{ row.id }}</td>
+                            <td data-name="uuid" class="uuid" id="uuid" data-type="text"
+                                data-pk="{{ row.id }}">{{ row.uuid }}</td>
+                            <td data-name="device_id" class="device_id" id="device_id" data-type="text"
+                                data-pk="{{ row.id }}">{{ row.device_id }}</td>
+                            <td data-name="description" class="description" id="description" data-type="text"
+                                data-pk="{{ row.id }}">{{ row.description }}</td>
+                            <td data-name="serial" class="serial" id="serial" data-type="text"
+                                data-pk="{{ row.id }}">{{ row.serial }}</td>
+                            <td data-name="activation_code" class="activation_code" id="activation_code" data-type="text"
+                                data-pk="{{ row.id }}">{{ row.activation_code }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

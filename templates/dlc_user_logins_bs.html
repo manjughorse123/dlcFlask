@@ -1,0 +1,187 @@
+{% extends "dlc_base_bs.html" %}
+
+{% block head %}
+
+    <script type="text/javascript" language="javascript">
+
+        var usereditor;
+        var id;
+        var usertable;
+
+        // User Logins Editor
+        $(document).ready(function () {
+
+            $('#sample_data tbody').on('click', 'tr', function () {
+                var table = $('#sample_data').DataTable();
+                id = table.row(this).data()[0];
+            });
+
+            usereditor = new $.fn.dataTable.Editor({
+                ajax: {
+                    create: {
+                        url: '/user_logins/create_user_login',
+                        success: function (response) {
+                            window.location.reload();
+                        }
+                    },
+                    edit: {
+                        url: '/user_logins/update_user_login',
+                        "dataType": "json",
+                        "dataSrc": "data",
+                        "contentType": "application/json",
+                        success: function (response) {
+                            window.location.reload();
+                        }
+                    },
+                    remove: "/user_logins/delete_user_login"
+                },
+                table: "#sample_data",
+                idSrc: "id",
+                fields: [{
+                        label: "ID:",
+                        name: "id",
+                        "type": "hidden"
+                    }, {
+                        label: "Name:",
+                        name: "name"
+                    }, {
+                        label: "Email:",
+                        name: "email"
+                    }, {
+                        label: "Password:",
+                        name: "password",
+                        type: "password"
+                    }, {
+                        label: "Staff ID:",
+                        name: "staff_id"
+                    }
+                ],
+                formOptions: {
+                    inline: {
+                        onBlur: 'submit'
+                    }
+                }
+            });
+
+            // Check field values
+            usereditor.on('initSubmit', function ( e, action ) {
+                if ( action !== 'remove' ) {
+                    var staffID = this.field('staff_id');
+
+                    if (!staffID.isMultiValue()) {
+                        if (!staffID.val()) {
+                            staffID.val('None');
+                        }
+                    }
+                }
+            });
+
+            // Check field inputs
+            usereditor.on('preSubmit', function (e, o, action) {
+                if (action !== 'remove') {
+                    var name = this.field('name');
+                    var email = this.field('email');
+                    var password = this.field('password');
+                    var staffId = this.field('staff_id');
+
+                    if (!name.isMultiValue()) {
+                        if (!name.val()) {
+                            name.error('A Name is required');
+                        }
+                    }
+                    if (!email.isMultiValue()) {
+                        if (!email.val()) {
+                            email.error('An Email is required');
+                        }
+                    }
+                    if (!password.isMultiValue()) {
+                        if (!password.val()) {
+                            password.error('A Password is required');
+                        }
+                    }
+                    if (this.inError()) {
+                        return false;
+                    }
+                }
+            });
+
+            // Activate an inline edit on click of a table cell
+            $('#sample_data').on('click', 'tbody td:not(:first-child)', function (e) {
+                usereditor.inline(this);
+            });
+
+            // User Logins Table
+            usertable = $('#sample_data').DataTable({
+                dom: "Bfrtip",
+                responsive: true,
+                searchBuilder: true,
+                columns: [
+                    {data: "id"},
+                    {data: "name"},
+                    {data: "email"},
+                    {data: "password"},
+                    {data: "staff_id"}
+                ],
+                select: {
+                    style: 'os',
+                    selector: 'td:first-child'
+                },
+                keys: {
+                    columns: ':not(:first-child)',
+                    keys: [4],
+                    editor: usereditor,
+                    editOnFocus: true
+                },
+                buttons: [
+                    {extend: 'searchBuilder'},
+                    {extend: "create", editor: usereditor},
+                    {extend: "edit", editor: usereditor},
+                    {extend: "remove", editor: usereditor},
+                    'copy', 'csv', 'excel', 'pdf', 'print'
+                ]
+            });
+            usertable.column(3).visible(false);
+            usertable.column(4).visible(false);
+        });
+
+    </script>
+
+{% endblock %}
+
+{% block title %}FLEETDLC - Driver Management{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">User Logins</h5>
+                <table id="sample_data" class="table table-striped table-responsive">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Password</th>
+                        <th>Staff-ID</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in staff %}
+                        <tr>
+                            <td data-pk="{{ row.id }}">{{ row.id }}</td>
+                            <td data-name="name" class="name" id="name" data-type="text"
+                                data-pk="{{ row.id }}">{{ row.name }}</td>
+                            <td data-name="email" class="email" id="email" data-type="text"
+                                data-pk="{{ row.id }}">{{ row.email }}</td>
+                            <td data-name="password" class="password" id="password" data-type="text"
+                                data-pk="{{ row.id }}">{{ row.password }}</td>
+                            <td data-name="staff_id" class="staff_id" id="staff_id" data-type="text"
+                                data-pk="{{ row.id }}">{{ row.staff_id }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
